@@ -1,0 +1,53 @@
+{
+  "navbar": {
+    "title": "FarmToFork Ledger",
+    "language": "Language",
+    "darkMode": "Dark Mode",
+    "lightMode": "Light Mode"
+  },
+  "home": {
+    "title": "Track Your Product Journey",
+    "subtitle": "From farm to fork, every step recorded on the blockchain"
+  },
+  "addStage": {
+    "title": "Add Product Stage",
+    "productId": "Product ID",
+    "productIdPlaceholder": "Enter unique product ID",
+    "stage": "Stage",
+    "stagePlaceholder": "e.g., Harvest, Processing, Packaging, Shipping",
+    "location": "Location",
+    "locationPlaceholder": "GPS coordinates or place name",
+    "date": "Date",
+    "notes": "Notes",
+    "notesPlaceholder": "Additional information",
+    "addButton": "Add Stage",
+    "adding": "Adding..."
+  },
+  "viewStages": {
+    "title": "Product Stages",
+    "noStages": "No stages recorded for this product",
+    "table": {
+      "productId": "Product ID",
+      "stage": "Stage",
+      "location": "Location",
+      "date": "Date",
+      "notes": "Notes",
+      "actions": "Actions"
+    }
+  },
+  "buttons": {
+    "clear": "Clear Form",
+    "export": "Export Data",
+    "refresh": "Refresh Stages"
+  },
+  "messages": {
+    "success": "Stage added successfully!",
+    "error": "Failed to add stage. Please try again.",
+    "exportSuccess": "Data exported successfully!",
+    "exportError": "Failed to export data."
+  },
+  "footer": {
+    "rights": "All rights reserved.",
+    "madeWith": "Made with ❤️ for a transparent food supply chain"
+  }
+}
