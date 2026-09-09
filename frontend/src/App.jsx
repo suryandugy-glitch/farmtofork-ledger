@@ -1,27 +1,92 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import './App.css';
 
-// Mock data for stages (in a real app, this would come from backend or blockchain)
-const initialStages = [
-  { id: 1, productId: 'PROD001', stage: 'Harvest', location: 'Farm A, Maharashtra', date: '2026-09-01', notes: 'Organic tomatoes' },
-  { id: 2, productId: 'PROD001', stage: 'Processing', location: 'Processing Unit B', date: '2026-09-02', notes: 'Washed and sorted' },
-];
-
 function App() {
   const { t, i18n } = useTranslation();
-  const [stages, setStages] = useState(initialStages);
+  const [stages, setStages] = useState([]);
   const [formData, setFormData] = useState({
     productId: '',
     stage: '',
     location: '',
     date: '',
+    temperature: '',
+    humidity: '',
     notes: '',
   });
   const [viewStages, setViewStages] = useState(false);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState(null); // { type: 'success'|'error'|'info', message: string }
+  const [apiLoading, setApiLoading] = useState(false);
+
+  // Auto-hide toast after 3 seconds
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
+  // Fetch stages from backend when component mounts or when viewStages changes
+  useEffect(() => {
+    if (viewStages) {
+      fetchStages();
+    }
+  }, [viewStages]);
+
+  // Fetch stages from backend
+  const fetchStages = async () => {
+    setApiLoading(true);
+    try {
+      const productId = 'PROD001'; // For demo, using a fixed product ID
+      const response = await fetch(`http://localhost:5000/stages/${productId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch stages');
+      }
+      const data = await response.json();
+      // Convert backend format to frontend format
+      const formattedStages = data.map((stage, index) => ({
+        id: stage.id || index.toString(),
+        productId: stage.productId,
+        stage: '', // We'll get this from the contract event or notes in a real implementation
+        location: stage.location,
+        date: new Date(stage.timestamp * 1000).toISOString().split('T')[0], // Convert Unix timestamp to YYYY-MM-DD
+        temperature: stage.temperature,
+        humidity: stage.humidity,
+        notes: stage.notes,
+      }));
+      setStages(formattedStages);
+    } catch (error) {
+      console.error('Error fetching stages:', error);
+      setToast({ type: 'error', message: t('messages.error') });
+      // Fallback to mock data if backend fails
+      setStages([
+        {
+          id: 1,
+          productId: 'PROD001',
+          stage: 'Harvest',
+          location: 'Farm A, Maharashtra',
+          date: '2026-09-01',
+          temperature: 25.0,
+          humidity: 60.0,
+          notes: 'Organic tomatoes'
+        },
+        {
+          id: 2,
+          productId: 'PROD001',
+          stage: 'Processing',
+          location: 'Processing Unit B',
+          date: '2026-09-02',
+          temperature: 22.0,
+          humidity: 55.0,
+          notes: 'Washed and sorted'
+        },
+      ]);
+    } finally {
+      setApiLoading(false);
+    }
+  };
 
   // Handle form input changes
   const handleChange = (e) => {
@@ -36,29 +101,61 @@ function App() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      // Convert date string to Unix timestamp
+      const timestamp = Math.floor(new Date(formData.date).getTime() / 1000);
 
-    // Add new stage
-    const newStage = {
-      id: Date.now(),
-      ...formData,
-    };
-    setStages(prev => [...prev, newStage]);
+      // Prepare data for backend
+      const stageData = {
+        productId: formData.productId,
+        location: formData.location,
+        notes: formData.notes,
+        temperature: parseFloat(formData.temperature),
+        humidity: parseFloat(formData.humidity),
+        // In a real app, you would have an IPFS hash here
+        ipfsHash: '0x0000000000000000000000000000000000000000000000000000000000000000'
+      };
 
-    // Reset form
-    setFormData({
-      productId: '',
-      stage: '',
-      location: '',
-      date: '',
-      notes: '',
-    });
+      // Call backend API
+      const response = await fetch('http://localhost:5000/stages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(stageData),
+      });
 
-    // Show success toast
-    setToast({ type: 'success', message: t('messages.success') });
+      if (!response.ok) {
+        throw new Error('Failed to add stage');
+      }
 
-    setLoading(false);
+      const result = await response.json();
+      console.log('Stage added successfully:', result);
+
+      // Reset form
+      setFormData({
+        productId: '',
+        stage: '',
+        location: '',
+        date: '',
+        temperature: '',
+        humidity: '',
+        notes: '',
+      });
+
+      // Show success toast
+      setToast({ type: 'success', message: t('messages.success') });
+
+      // Refresh stages if viewing
+      if (viewStages) {
+        fetchStages();
+      }
+    } catch (error) {
+      console.error('Error adding stage:', error);
+      setToast({ type: 'error', message: t('messages.error') });
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Handle clearing form
@@ -68,6 +165,8 @@ function App() {
       stage: '',
       location: '',
       date: '',
+      temperature: '',
+      humidity: '',
       notes: '',
     });
   };
@@ -81,26 +180,15 @@ function App() {
   // Handle refreshing stages (mock)
   const handleRefresh = () => {
     setToast({ type: 'info', message: t('messages.refresh') });
-    // In real app: fetch from blockchain/backend
+    if (viewStages) {
+      fetchStages();
+    }
   };
 
   // Handle language change
   const handleLanguageChange = (lang) => {
     i18n.changeLanguage(lang);
   };
-
-  // Toast auto-hide after 3 seconds
-  // Note: In a real app, we might use a toast library, but for simplicity we'll manage state
-  // We'll use a timeout to clear the toast after 3 seconds
-  // We'll use useEffect for this, but to keep it simple in this example, we'll just note it.
-  // Since we cannot run useEffect in this context without hooks, we'll skip auto-hide for now.
-  // In a production app, we would add:
-  // useEffect(() => {
-  //   if (toast) {
-  //     const timer = setTimeout(() => setToast(null), 3000);
-  //     return () => clearTimeout(timer);
-  //   }
-  // }, [toast]);
 
   return (
     <motion.div
@@ -311,6 +399,38 @@ function App() {
                   />
                 </div>
                 <div>
+                  <label htmlFor="temperature" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {t('addStage.temperature')}
+                  </label>
+                  <input
+                    type="number"
+                    id="temperature"
+                    name="temperature"
+                    value={formData.temperature}
+                    onChange={handleChange}
+                    placeholder={t('addStage.temperaturePlaceholder')}
+                    className="input-field w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors duration-200"
+                    step="0.1"
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="humidity" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {t('addStage.humidity')}
+                  </label>
+                  <input
+                    type="number"
+                    id="humidity"
+                    name="humidity"
+                    value={formData.humidity}
+                    onChange={handleChange}
+                    placeholder={t('addStage.humidityPlaceholder')}
+                    className="input-field w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors duration-200"
+                    step="0.1"
+                    required
+                  />
+                </div>
+                <div>
                   <label htmlFor="notes" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     {t('addStage.notes')}
                   </label>
@@ -353,81 +473,97 @@ function App() {
               animate={{ y: 0, opacity: 1 }}
               className="p-6"
             >
-              {stages.length === 0 ? (
+              {(apiLoading && stages.length === 0) ? (
                 <p className="text-center text-gray-500 dark:text-gray-400 py-8">
-                  {t('viewStages.noStages')}
+                  {t('viewStages.loading')}
                 </p>
               ) : (
                 <>
-                  <div className="flex justify-end mb-4">
-                    <button
-                      onClick={handleExport}
-                      className="px-4 py-2 bg-green-500 dark:bg-green-600 text-white rounded hover:bg-green-600 dark:hover:bg-green-700 transition-colors duration-200"
-                    >
-                      {t('buttons.export')}
-                    </button>
-                    <button
-                      onClick={handleRefresh}
-                      className="ml-3 px-4 py-2 bg-gray-500 dark:bg-gray-600 text-white rounded hover:bg-gray-600 dark:hover:bg-gray-700 transition-colors duration-200"
-                    >
-                      {t('buttons.refresh')}
-                    </button>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
-                      <thead className="bg-gray-50 dark:bg-gray-600">
-                        <tr>
-                          <th className="table-header px-4 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                            {t('viewStages.table.productId')}
-                          </th>
-                          <th className="table-header px-4 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                            {t('viewStages.table.stage')}
-                          </th>
-                          <th className="table-header px-4 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                            {t('viewStages.table.location')}
-                          </th>
-                          <th className="table-header px-4 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                            {t('viewStages.table.date')}
-                          </th>
-                          <th className="table-header px-4 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                            {t('viewStages.table.notes')}
-                          </th>
-                          <th className="table-header px-4 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                            {t('viewStages.table.actions')}
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white dark:bg-gray-700 divide-y divide-gray-600">
-                        {stages.map(stage => (
-                          <tr
-                            key={stage.id}
-                            className="table-row hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors duration-200"
-                          >
-                            <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200">{stage.productId}</td>
-                            <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200">{stage.stage}</td>
-                            <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200">{stage.location}</td>
-                            <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200">{stage.date}</td>
-                            <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200">{stage.notes}</td>
-                            <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200 space-x-2">
-                              <button
-                                className="text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300"
-                                title="Edit"
+                  {stages.length === 0 && !apiLoading ? (
+                    <p className="text-center text-gray-500 dark:text-gray-400 py-8">
+                      {t('viewStages.noStages')}
+                    </p>
+                  ) : (
+                    <>
+                      <div className="flex justify-end mb-4">
+                        <button
+                          onClick={handleExport}
+                          className="px-4 py-2 bg-green-500 dark:bg-green-600 text-white rounded hover:bg-green-600 dark:hover:bg-green-700 transition-colors duration-200"
+                        >
+                          {t('buttons.export')}
+                        </button>
+                        <button
+                          onClick={handleRefresh}
+                          className="ml-3 px-4 py-2 bg-gray-500 dark:bg-gray-600 text-white rounded hover:bg-gray-600 dark:hover:bg-gray-700 transition-colors duration-200"
+                        >
+                          {t('buttons.refresh')}
+                        </button>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-600">
+                          <thead className="bg-gray-50 dark:bg-gray-600">
+                            <tr>
+                              <th className="table-header px-4 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                                {t('viewStages.table.productId')}
+                              </th>
+                              <th className="table-header px-4 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                                {t('viewStages.table.stage')}
+                              </th>
+                              <th className="table-header px-4 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                                {t('viewStages.table.location')}
+                              </th>
+                              <th className="table-header px-4 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                                {t('viewStages.table.date')}
+                              </th>
+                              <th className="table-header px-4 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                                {t('viewStages.table.temperature')}
+                              </th>
+                              <th className="table-header px-4 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                                {t('viewStages.table.humidity')}
+                              </th>
+                              <th className="table-header px-4 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                                {t('viewStages.table.notes')}
+                              </th>
+                              <th className="table-header px-4 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                                {t('viewStages.table.actions')}
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white dark:bg-gray-700 divide-y divide-gray-600">
+                            {stages.map(stage => (
+                              <tr
+                                key={stage.id}
+                                className="table-row hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors duration-200"
                               >
-                                ✏️
-                              </button>
-                              <button
-                                className="text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300"
-                                title="Delete"
-                                onClick={() => setStages(prev => prev.filter(s => s.id !== stage.id))}
-                              >
-                                🗑️
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                                <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200">{stage.productId}</td>
+                                <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200">{stage.stage}</td>
+                                <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200">{stage.location}</td>
+                                <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200">{stage.date}</td>
+                                <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200">{stage.temperature}°C</td>
+                                <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200>{stage.humidity}%</td>
+                                <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200">{stage.notes}</td>
+                                <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-200 space-x-2">
+                                  <button
+                                    className="text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300"
+                                    title="Edit"
+                                  >
+                                    ✏️
+                                  </button>
+                                  <button
+                                    className="text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300"
+                                    title="Delete"
+                                    onClick={() => setStages(prev => prev.filter(s => s.id !== stage.id))}
+                                  >
+                                    🗑️
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  )}
                 </>
               )}
             </motion.div>

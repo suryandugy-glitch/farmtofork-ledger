@@ -18,6 +18,10 @@
     "location": "Location",
     "locationPlaceholder": "GPS coordinates or place name",
     "date": "Date",
+    "temperature": "Temperature (°C)",
+    "temperaturePlaceholder": "e.g., 25.0",
+    "humidity": "Humidity (%)",
+    "humidityPlaceholder": "e.g., 60.0",
     "notes": "Notes",
     "notesPlaceholder": "Additional information",
     "addButton": "Add Stage",
@@ -31,6 +35,8 @@
       "stage": "Stage",
       "location": "Location",
       "date": "Date",
+      "temperature": "Temp (°C)",
+      "humidity": "Humidity (%)",
       "notes": "Notes",
       "actions": "Actions"
     }

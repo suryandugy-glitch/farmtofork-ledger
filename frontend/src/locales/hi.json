@@ -18,6 +18,10 @@
     "location": "स्थान",
     "locationPlaceholder": "जीपीएस निर्देशांक या स्थान का नाम",
     "date": "तारीख",
+    "temperature": "तापमान (°C)",
+    "temperaturePlaceholder": "उदा: 25.0",
+    "humidity": "आर्द्रता (%)",
+    "humidityPlaceholder": "उदा: 60.0",
     "notes": "नोट्स",
     "notesPlaceholder": "अतिरिक्त जानकारी",
     "addButton": "चरण जोड़ें",
@@ -31,6 +35,8 @@
       "stage": "चरण",
       "location": "स्थान",
       "date": "तारीख",
+      "temperature": "तापमान (°C)",
+      "humidity": "आर्द्रता (%)",
       "notes": "नोट्स",
       "actions": "कार्यवाही"
     }
@@ -42,7 +48,7 @@
   },
   "messages": {
     "success": "चरण सफलतापूर्वक जोड़ा गया!",
-    "error": "चरण जोड़ने में विफल. कृपया ponownie कोशिश करें।",
+    "error": "चरण जोड़ने में विफल. कृपया 또다시 कोशिश करें।",
     "exportSuccess": "डेटा सफलतापूर्वक निर्यात किया गया!",
     "exportError": "डेटा निर्यात करने में विफल."
   },
