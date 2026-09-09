@@ -30,6 +30,7 @@
   "viewStages": {
     "title": "Product Stages",
     "noStages": "No stages recorded for this product",
+    "loading": "Loading stages...",
     "table": {
       "productId": "Product ID",
       "stage": "Stage",
@@ -44,13 +45,29 @@
   "buttons": {
     "clear": "Clear Form",
     "export": "Export Data",
-    "refresh": "Refresh Stages"
+    "refresh": "Refresh Stages",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "cancel": "Cancel"
   },
   "messages": {
     "success": "Stage added successfully!",
     "error": "Failed to add stage. Please try again.",
     "exportSuccess": "Data exported successfully!",
-    "exportError": "Failed to export data."
+    "exportError": "Failed to export data.",
+    "updated": "Stage updated successfully!",
+    "deleted": "Stage deleted successfully!",
+    "copied": "Copied to clipboard:",
+    "copyFailed": "Failed to copy to clipboard",
+    "productIdSet": "Product ID set",
+    "confirmDelete": "Confirm Deletion",
+    "confirmDeleteStage": "Are you sure you want to delete this stage?",
+    "saving": "Saving..."
+  },
+  "validation": {
+    "productIdRequired": "Product ID is required",
+    "stageRequired": "Stage is required"
   },
   "footer": {
     "rights": "All rights reserved.",
