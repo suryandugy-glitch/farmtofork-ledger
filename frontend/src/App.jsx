@@ -43,7 +43,7 @@ function App() {
     setApiLoading(true);
     try {
       const productId = 'PROD001'; // For demo, using a fixed product ID
-      const response = await fetch(`http://localhost:5000/stages/${productId}`);
+      const response = await fetch(`http://localhost:5001/stages/${productId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch stages');
       }
@@ -142,7 +142,7 @@ function App() {
       };
 
       // Call backend API
-      const response = await fetch('http://localhost:5000/stages', {
+      const response = await fetch('http://localhost:5001/stages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

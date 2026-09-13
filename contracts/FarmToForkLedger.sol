@@ -53,7 +53,8 @@ contract FarmToForkLedger {
             ipfsHash
         );
 
-        uint256 index = productStages[productId].push(newStage) - 1;
+        productStages[productId].push(newStage);
+        uint256 index = productStages[productId].length - 1;
 
         emit StageAdded(
             productId,

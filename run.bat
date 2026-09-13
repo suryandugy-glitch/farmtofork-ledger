@@ -59,21 +59,20 @@ goto :eof
 :wait_for_port
 set PORT=%1
 set TIMEOUT=%2
-set START_TIME=%TIME%
-set /a ELAPSED=0
+set /a COUNT=0
 :wait_loop
-call :check_port %PORT%
-if "%PORT_FOUND%"=="true" (
-    goto :port_ready
-) else (
-    set /a ELAPSED=%TIME%-%START_TIME%
-    if %ELAPSED% GEQ %TIMEOUT% (
-        goto :port_timeout
+    call :check_port %PORT%
+    if "%PORT_FOUND%"=="true" (
+        goto :port_ready
     ) else (
-        timeout /t 1 > nul
-        goto :wait_loop
+        if %COUNT% GEQ %TIMEOUT% (
+            goto :port_timeout
+        ) else (
+            timeout /t 1 > nul
+            set /a COUNT+=1
+            goto :wait_loop
+        )
     )
-)
 goto :eof
 
 :port_ready
@@ -142,6 +141,25 @@ if errorlevel 1 (
     for /f "tokens=*" %%a in ('echo !DEPLOY_OUTPUT! ^| findstr /i "Deployed to\|contract address\|0x"') do set CONTRACT_ADDRESS=%%a
     if defined CONTRACT_ADDRESS (
         echo [INFO] Contract address: !CONTRACT_ADDRESS!
+        :: Update backend/.env with the deployed contract address
+        set ENV_FILE=backend\.env
+        if exist "%ENV_FILE%" (
+            :: Create a temporary file without the CONTRACT_ADDRESS line
+            > "%ENV_FILE%.tmp" (
+                for /f "usebackq delims=" %%b in (`findstr /v "CONTRACT_ADDRESS=" "%ENV_FILE%"`) do (
+                    echo %%b
+                )
+            )
+            :: Add the new CONTRACT_ADDRESS line
+            echo CONTRACT_ADDRESS=!CONTRACT_ADDRESS!>>"%ENV_FILE%.tmp"
+            :: Replace the original file
+            move /y "%ENV_FILE%.tmp"% "%ENV_FILE%" >nul
+        ) else (
+            :: If the file doesn't exist, create it
+            echo CONTRACT_ADDRESS=!CONTRACT_ADDRESS!> "%ENV_FILE%"
+        )
+    ) else (
+        echo [WARNING] Could not extract contract address from deployment output.
     )
 )
 
@@ -168,8 +186,8 @@ start "" "Backend API - FarmToFork Ledger" cmd /k "
     )
     echo.
     echo [INFO] Starting backend server...
-    echo [INFO] API will be available at: http://localhost:5000
-    echo [INFO] Health check endpoint: http://localhost:5000/health
+    echo [INFO] API will be available at: http://localhost:5001
+    echo [INFO] Health check endpoint: http://localhost:5001/health
     echo.
     npm start
     echo.
@@ -180,9 +198,9 @@ start "" "Backend API - FarmToFork Ledger" cmd /k "
 :: Wait for backend to start
 echo [INFO] Waiting for backend to start (max 20 seconds)...
 set /a START_TIME=%TIME%
-call :wait_for_port 5000 20
+call :wait_for_port 5001 20
 if "%PORT_READY%"=="true" (
-    echo [SUCCESS] Backend API is ready on port 5000!
+    echo [SUCCESS] Backend API is ready on port 5001!
 ) else (
     echo [WARNING] Timeout waiting for backend to start.
     echo [INFO] The backend may still be starting in the background. Continuing anyway...
@@ -240,7 +258,7 @@ echo    Service Information:
 echo ==============================================================
 echo [INFO] Hardhat Node:   Local Ethereum blockchain
 echo [INFO]                 Check its window for blockchain logs
-echo [INFO] Backend:        API server running at http://localhost:5000
+echo [INFO] Backend:        API server running at http://localhost:5001
 echo [INFO] Frontend:       React application running at http://localhost:5173
 echo.
 echo [INFO] To stop all services, simply close the respective windows.

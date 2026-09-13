@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const Web3 = require('web3');
+const { Web3 } = require('web3');
 const path = require('path');
 const fs = require('fs');
 
@@ -31,7 +31,8 @@ const loadContract = () => {
     // Get contract address from deployment or environment
     const contractAddress = process.env.CONTRACT_ADDRESS || '0x5FbDB2315678afecb367f032d93F642f64180aa3'; // Default to first account in Hardhat node
 
-    web3 = new Web3(new Web3.providers.HttpProvider(process.env.RPC_URL || 'http://127.0.0.1:8545'));
+    // In web3 4.x, we create a Web3 instance with the provider URL
+    web3 = new Web3(process.env.RPC_URL || 'http://127.0.0.1:8545');
     contract = new web3.eth.Contract(abi, contractAddress);
 
     console.log(`Contract loaded at address: ${contractAddress}`);
@@ -69,7 +70,7 @@ app.get('/stages/:productId', async (req, res) => {
     const formattedStages = stages.map((stage, index) => ({
       id: index.toString(), // Using index as ID for simplicity
       productId,
-      timestamp: stage.timestamp,
+      timestamp: Number(stage.timestamp), // Convert BigInt to number
       location: stage.location,
       notes: stage.notes,
       temperature: formatValue(stage.temperature),
