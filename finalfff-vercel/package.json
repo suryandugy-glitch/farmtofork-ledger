@@ -1,0 +1,19 @@
+{
+  "name": "farmtofork-ledger",
+  "version": "1.0.0",
+  "description": "FarmToFork Ledger - Supply Chain Transparency for Local Produce",
+  "main": "api/index.js",
+  "scripts": {
+    "start": "node api/index.js",
+    "build": "echo Pre-built production assets ready"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.1",
+    "express": "^5.2.1",
+    "multer": "^2.4.0"
+  },
+  "engines": {
+    "node": ">=18.x"
+  }
+}
